@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>智能药箱控制系统</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ===== 全局重置 & 通用 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      color: #fff;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 10px rgba(0,200,255,0.5);
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    h1 i { color: #00d4ff; filter: drop-shadow(0 0 10px rgba(0,212,255,0.7)); animation: pulse-icon 2s ease-in-out infinite; }
+    @keyframes pulse-icon { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+    .card {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .card h3 { color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 18px; }
+    .card h3 i { color: #00d4ff; }
+
+    /* ---- IP设置 ---- */
+    .ip-setting {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px 15px;
+    }
+    .ip-setting i { color: #00d4ff; margin-right: 5px; }
+    .ip-setting label { color: #aaa; }
+    .ip-setting input {
+      padding: 6px 10px;
+      border: 2px solid #3a4a6b;
+      border-radius: 8px;
+      width: 160px;
+      text-align: center;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+    .ip-setting input:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0,212,255,0.2); }
+    .ip-setting button {
+      padding: 6px 16px;
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+      box-shadow: 0 2px 10px rgba(0,212,255,0.3);
+      font-size: 13px;
+    }
+    .ip-setting button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,0.4); }
+
+    /* ---- 设置按钮 ---- */
+    .settings-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 8px 15px;
+      background: linear-gradient(135deg, #ffd700, #ffb700);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+      box-shadow: 0 2px 10px rgba(255,215,0,0.3);
+      z-index: 100;
+    }
+    .settings-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255,215,0,0.5); }
+    .settings-btn i { margin-right: 5px; }
+
+    /* ---- 模式选择（3种） ---- */
+    .mode-selector {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    .mode-selector button {
+      padding: 10px 16px;
+      border: 2px solid #3a4a6b;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 14px;
+      flex: 1 1 auto;
+      min-width: 80px;
+    }
+    .mode-selector button:hover { border-color: #00d4ff; background: rgba(0,212,255,0.1); transform: translateY(-2px); }
+    .mode-selector button.active {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #1a1a2e;
+      border-color: #00d4ff;
+      box-shadow: 0 0 20px rgba(0,212,255,0.4);
+      font-weight: bold;
+    }
+    .mode-selector button i { margin-right: 5px; }
+
+    /* ---- 新增用户卡片 ---- */
+    .add-user-card {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    .add-user-card input, .add-user-card button {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 2px solid #3a4a6b;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 14px;
+    }
+    .add-user-card input:focus { outline: none; border-color: #00d4ff; }
+    .add-user-card input[type="file"] { border: none; padding: 5px; }
+    .add-user-card button {
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #1a1a2e;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 2px 10px rgba(0,255,136,0.3);
+    }
+    .add-user-card button:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,255,136,0.5); }
+    .add-user-card .file-label {
+      background: rgba(0,0,0,0.3);
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 2px solid #3a4a6b;
+      cursor: pointer;
+      transition: 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .add-user-card .file-label:hover { border-color: #00d4ff; background: rgba(0,212,255,0.1); }
+    .add-user-card .file-label i { color: #00d4ff; }
+    #fileInput { display: none; }
+    #fileName { color: #a0b0c0; font-size: 13px; margin-left: 5px; }
+
+    /* ---- 状态 ---- */
+    .status {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      transition: 0.3s;
+    }
+    .status i { margin-right: 8px; }
+    .status.idle { color: #00ff88; border-left: 5px solid #00ff88; }
+    .status.working { color: #ff4757; border-left: 5px solid #ff4757; animation: pulse-status 1.5s infinite; }
+    .status.emergency { color: #ff4757; border-left: 5px solid #ff4757; background: rgba(255,71,87,0.2); }
+    @keyframes pulse-status { 0%{box-shadow:0 0 0 0 rgba(255,71,87,0.4);} 70%{box-shadow:0 0 0 15px rgba(255,71,87,0);} 100%{box-shadow:0 0 0 0 rgba(255,71,87,0);} }
+
+    /* ---- 当前药方 ---- */
+    .current-plan {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .current-plan i { color: #00d4ff; margin-right: 5px; }
+    .current-plan h3 { color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .current-plan-name { font-size: 20px; font-weight: bold; color: #00d4ff; margin-bottom: 10px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
+    .current-plan-details { color: #a0b0c0; font-size: 14px; }
+
+    /* ---- 批量取药按钮（日常模式） ---- */
+    .batch-dispense-area {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .batch-dispense-btn {
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 4px 20px rgba(0,255,136,0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .batch-dispense-btn:hover { transform: scale(1.05); box-shadow: 0 6px 30px rgba(0,255,136,0.5); }
+
+    /* ---- 急停按钮 ---- */
+    .stop-btn {
+      display: block;
+      margin: 15px auto;
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #ff4757, #c0392b);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 4px 20px rgba(255,71,87,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .stop-btn:hover { transform: scale(1.05); box-shadow: 0 6px 30px rgba(255,71,87,0.6); }
+
+    /* ---- 药品网格 ---- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+    .medicine-card {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: 0.3s;
+      border: 1px solid rgba(0,212,255,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .medicine-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #00d4ff, #00ff88);
+    }
+    .medicine-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,212,255,0.2); border-color: rgba(0,212,255,0.3); }
+    .medicine-card h3 {
+      color: #fff;
+      margin-bottom: 15px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 16px;
+    }
+    .medicine-card h3 i { color: #00d4ff; }
+    .medicine-input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .medicine-input-group button {
+      width: 35px;
+      height: 35px;
+      border: 2px solid #3a4a6b;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      transition: 0.2s;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .medicine-input-group button:hover { background: #00d4ff; color: #1a1a2e; border-color: #00d4ff; transform: scale(1.1); }
+    .medicine-input-group input {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid #3a4a6b;
+      border-left: none;
+      border-right: none;
+      text-align: center;
+      font-size: 16px;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      border-radius: 0;
+    }
+    .medicine-input-group input:focus { outline: none; border-color: #00d4ff; background: rgba(0,212,255,0.1); }
+    .dispense-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 2px 15px rgba(0,212,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .dispense-btn:hover { transform: scale(1.03); box-shadow: 0 4px 20px rgba(0,212,255,0.5); }
+    .dispense-btn:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ---- 重置按钮 ---- */
+    .reset-btn {
+      display: block;
+      margin: 15px auto;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      text-align: center;
+      max-width: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #6c757d, #5a6268);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(108,117,125,0.3);
+      margin-top: 20px;
+    }
+    .reset-btn:hover { background: linear-gradient(135deg, #5a6268, #495057); transform: translateY(-2px); }
+
+    /* ---- 药方管理（用户关联） ---- */
+    .plan-section {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .plan-section h3 { color: #fff; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .plan-section h3 i { color: #00d4ff; }
+    .plan-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    .plan-controls select {
+      padding: 10px;
+      border: 2px solid #3a4a6b;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      min-width: 150px;
+      font-size: 14px;
+    }
+    .plan-controls select:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0,212,255,0.2); }
+    .plan-controls select option { background: #1a1a2e; color: #fff; }
+    .plan-controls button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .plan-controls button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .save-plan-btn { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #1a1a2e; }
+    .load-plan-btn { background: linear-gradient(135deg, #00d4ff, #0099cc); color: #1a1a2e; }
+    .execute-plan-btn { background: linear-gradient(135deg, #ff9f43, #ffc048); color: #1a1a2e; }
+
+    /* ---- 照片列表 ---- */
+    .photo-list-section {
+      margin-top: 20px;
+      border-top: 1px solid #3a4a6b;
+      padding-top: 15px;
+    }
+    .photo-list-section h4 { color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .photo-list-section h4 i { color: #00d4ff; }
+    .photo-item {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      margin: 5px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #3a4a6b;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .photo-item:hover { transform: scale(1.05); border-color: #00d4ff; }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-user-group {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .photo-user-group .user-name {
+      font-weight: bold;
+      color: #00d4ff;
+      margin-bottom: 5px;
+    }
+
+    /* ---- 放药模式 ---- */
+    .fill-section {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .fill-section h3 { color: #fff; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    /* ---- 药品设置模态框 ---- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    .modal-content {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      margin: 5% auto;
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .modal-header { margin-bottom: 20px; }
+    .modal-header h2 { color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .modal-header h2 i { color: #00d4ff; }
+    .modal-body { margin-bottom: 20px; }
+    .medicine-settings {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    .medicine-setting-item {
+      display: flex;
+      align-items: center;
+    }
+    .medicine-setting-item label {
+      width: 80px;
+      font-weight: bold;
+      color: #00d4ff;
+      font-size: 14px;
+    }
+    .medicine-setting-item input {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid #3a4a6b;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+    }
+    .medicine-setting-item input:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0,212,255,0.2); }
+    .modal-footer { text-align: center; }
+    .modal-footer button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .modal-footer button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .save-btn { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #1a1a2e; }
+    .cancel-btn { background: linear-gradient(135deg, #6c757d, #5a6268); color: #fff; }
+
+    /* ---- Toast & Loading ---- */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      z-index: 3000;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 90%;
+    }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+    .toast.success { background: linear-gradient(135deg, #00ff88, #00cc6a); color: #1a1a2e; }
+    .toast.error { background: linear-gradient(135deg, #ff4757, #c0392b); }
+    .toast.info { background: linear-gradient(135deg, #00d4ff, #0099cc); color: #1a1a2e; }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(26,26,46,0.9);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .loading-spinner {
+      border: 4px solid rgba(0,212,255,0.2);
+      border-top: 4px solid #00d4ff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+      box-shadow: 0 0 20px rgba(0,212,255,0.3);
+    }
+    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+    .loading-text { color: #00d4ff; font-weight: bold; font-size: 16px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
+
+    /* ---- 操作日志 ---- */
+    .log-section {
+      background: linear-gradient(145deg, #1e2a4a, #243b5c);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .log-section h3 { color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 16px; }
+    .log-section h3 i { color: #00d4ff; }
+    .log-box {
+      background: #000;
+      border-radius: 8px;
+      padding: 10px;
+      height: 150px;
+      overflow-y: auto;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #00ff88;
+    }
+    .log-entry { margin-bottom: 2px; }
+    .log-entry .time { color: #a0b0c0; }
+
+    /* ---- 移动端适配 ---- */
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .container { width: 100%; }
+      .ip-setting { flex-direction: column; align-items: stretch; }
+      .ip-setting input { width: 100%; }
+      .settings-btn { position: static; display: inline-block; margin-bottom: 10px; }
+      .mode-selector button { font-size: 12px; padding: 8px 10px; min-width: 60px; }
+      .medicine-setting-item { flex-wrap: wrap; }
+      .medicine-setting-item label { width: 100%; margin-bottom: 5px; }
+      .photo-item { width: 70px; height: 70px; }
+      .add-user-card { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设置按钮 -->
+  <button class="settings-btn" onclick="openSettings()">
+    <i class="fas fa-cog"></i> 药品设置
+  </button>
+
+  <div class="container">
+
+    <h1>
+      <i class="fas fa-capsules"></i>
+      智能药箱控制系统
+    </h1>
+
+    <!-- 树莓派IP设置 -->
+    <div class="ip-setting">
+      <div>
+        <i class="fas fa-wifi"></i>
+        <label for="mainEspIp">树莓派IP:</label>
+        <input type="text" id="mainEspIp" placeholder="192.168.1.100">
+        <button onclick="saveEspIp()">
+          <i class="fas fa-save"></i> 保存
+        </button>
+      </div>
+    </div>
+
+    <!-- 模式选择（3种） -->
+    <div class="mode-selector">
+      <button onclick="switchMode('daily')" class="active" id="dailyModeBtn">
+        <i class="fas fa-pills"></i> 日常取药
+      </button>
+      <button onclick="switchMode('plan')" id="planModeBtn">
+        <i class="fas fa-user-md"></i> 用户方案
+      </button>
+      <button onclick="switchMode('fill')" id="fillModeBtn">
+        <i class="fas fa-box-open"></i> 放药
+      </button>
+    </div>
+
+    <!-- ===== 新增用户卡片 ===== -->
+    <div class="add-user-card">
+      <i class="fas fa-user-plus" style="color:#00d4ff; font-size:20px;"></i>
+      <input type="text" id="newUserName" placeholder="输入姓名" style="flex:1; min-width:120px;">
+      <label class="file-label" for="fileInput">
+        <i class="fas fa-camera"></i> 选择照片
+      </label>
+      <input type="file" id="fileInput" accept="image/*">
+      <span id="fileName" style="color:#a0b0c0; font-size:13px;">未选择文件</span>
+      <button onclick="uploadNewUser()">
+        <i class="fas fa-upload"></i> 上传并录入
+      </button>
+    </div>
+
+    <!-- 状态 -->
+    <div id="status" class="status idle">
+      <i class="fas fa-check-circle"></i> 状态: 待机中
+    </div>
+
+    <!-- 批量取药按钮（仅在日常模式下显示） -->
+    <div id="batchArea" class="batch-dispense-area" style="display: block;">
+      <button class="batch-dispense-btn" onclick="dispenseMultiple()">
+        <i class="fas fa-list-ul"></i> 批量取药
+      </button>
+    </div>
+
+    <!-- 当前药方（仅药方模式） -->
+    <div id="currentPlanSection" class="current-plan" style="display: none;">
+      <h3>
+        <i class="fas fa-file-medical"></i> 当前用户方案
+      </h3>
+      <div class="current-plan-name" id="currentPlanName">未选择用户</div>
+      <div class="current-plan-details" id="currentPlanDetails"></div>
+    </div>
+
+    <!-- 药品网格 -->
+    <div class="grid" id="medGrid"></div>
+
+    <!-- 用户方案管理（仅药方模式） -->
+    <div id="planSection" class="plan-section" style="display: none;">
+      <h3>
+        <i class="fas fa-user-cog"></i> 用户方案管理
+      </h3>
+      <div class="plan-controls">
+        <select id="userSelect">
+          <option value="">-- 选择用户 --</option>
+        </select>
+        <button class="load-plan-btn" onclick="loadSelectedUserPlan()">
+          <i class="fas fa-download"></i> 加载方案
+        </button>
+        <button class="save-plan-btn" onclick="saveSelectedUserPlan()">
+          <i class="fas fa-save"></i> 保存方案
+        </button>
+        <button class="execute-plan-btn" onclick="executeSelectedUserPlan()">
+          <i class="fas fa-play"></i> 执行取药
+        </button>
+      </div>
+
+      <!-- 照片列表区域 -->
+      <div class="photo-list-section">
+        <h4>
+          <i class="fas fa-images"></i> 已上传照片
+        </h4>
+        <div id="photoList" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;"></div>
+      </div>
+    </div>
+
+    <!-- 放药模式（仅放药模式） -->
+    <div id="fillSection" class="fill-section" style="display: none;">
+      <h3>
+        <i class="fas fa-box-open"></i> 放药模式
+      </h3>
+      <p style="text-align: center; color: #a0b0c0; margin-bottom: 15px;">
+        点击按钮将放药口对准目标药品位置（放药口自动打开）<br>
+        放药完成后请点击下方"复位"按钮关闭放药口
+      </p>
+      <div class="plan-controls" style="flex-wrap: wrap;">
+        <button class="load-plan-btn" onclick="rotateToMedicine(0)">
+          <i class="fas fa-circle-1"></i> 药品1
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(1)">
+          <i class="fas fa-circle-2"></i> 药品2
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(2)">
+          <i class="fas fa-circle-3"></i> 药品3
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(3)">
+          <i class="fas fa-circle-4"></i> 药品4
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(4)">
+          <i class="fas fa-circle-5"></i> 药品5
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(5)">
+          <i class="fas fa-circle-6"></i> 药品6
+        </button>
+        <button class="load-plan-btn" onclick="rotateToMedicine(6)"
+                style="background: linear-gradient(135deg, #ff9f43, #ffc048);">
+          <i class="fas fa-box"></i> 袋装药
+        </button>
+      </div>
+      <div class="plan-controls">
+        <button class="save-plan-btn" onclick="rotateToHome()">
+          <i class="fas fa-home"></i> 主控复位
+        </button>
+        <button class="save-plan-btn" onclick="resetBag()"
+                style="background: linear-gradient(135deg, #ff9f43, #ffc048);">
+          <i class="fas fa-undo"></i> 袋装复位
+        </button>
+      </div>
+    </div>
+
+    <!-- 急停按钮 -->
+    <button class="stop-btn" onclick="emergencyStop()">
+      <i class="fas fa-stop-circle"></i> 急停
+    </button>
+
+    <!-- 重置 -->
+    <button class="reset-btn" onclick="resetAll()">
+      <i class="fas fa-redo"></i> 重置所有数量
+    </button>
+
+    <!-- 操作日志 -->
+    <div class="log-section">
+      <h3>
+        <i class="fas fa-terminal"></i> 操作日志
+      </h3>
+      <div class="log-box" id="logBox"></div>
+    </div>
+  </div>
+
+  <!-- 药品设置模态框 -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-pills"></i> 药品名称设置
+        </h2>
+      </div>
+      <div class="modal-body">
+        <div class="medicine-settings" id="medicineSettings"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="save-btn" onclick="saveSettings()">
+          <i class="fas fa-check"></i> 保存
+        </button>
+        <button class="cancel-btn" onclick="closeSettings()">
+          <i class="fas fa-times"></i> 取消
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======================== 全局变量 ========================
+    const TOTAL_MEDICINES = 7;
+    let isWorking = false;
+    let currentMode = 'daily';
+    let mainEspIp = localStorage.getItem('mainEspIp') || '192.168.1.100:5000';
+    let bagEspIp  = mainEspIp;
+    if (localStorage.getItem('espIp') && !localStorage.getItem('mainEspIp')) {
+      mainEspIp = localStorage.getItem('espIp');
+      localStorage.setItem('mainEspIp', mainEspIp);
+      bagEspIp = mainEspIp;
+    }
+    let medicineNames = JSON.parse(localStorage.getItem('medicineNames')) || {
+      0: '药品 1',
+      1: '药品 2',
+      2: '药品 3',
+      3: '药品 4',
+      4: '药品 5',
+      5: '药品 6',
+      6: '袋装药'
+    };
+    let userList = [];
+    let currentSelectedUser = '';
+
+    // ======================== DOM 初始化 ========================
+    document.getElementById('mainEspIp').value = mainEspIp;
+
+    // 文件选择显示文件名
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = this.files[0];
+      document.getElementById('fileName').textContent = file ? file.name : '未选择文件';
+    });
+
+    // ======================== 操作日志 ========================
+    function addLog(message) {
+      const logBox = document.getElementById('logBox');
+      const now = new Date();
+      const time = now.toTimeString().substring(0, 8);
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="time">[${time}]</span> ${message}`;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+      while (logBox.children.length > 50) {
+        logBox.removeChild(logBox.firstChild);
+      }
+    }
+
+    // ======================== Toast & Loading ========================
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' :
+                   type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' :
+                   '<i class="fas fa-info-circle"></i>';
+      toast.innerHTML = icon + ' ' + message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function showLoading(message = '加载中...') {
+      const loading = document.createElement('div');
+      loading.className = 'loading-overlay';
+      loading.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div class="loading-text"><i class="fas fa-spinner"></i> ${message}</div>
+        <button onclick="cancelLoading()" style="margin-top:15px;padding:8px 20px;background:#ff4757;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">跳过等待</button>
+      `;
+      loading.id = 'loadingOverlay';
+      document.body.appendChild(loading);
+    }
+
+    function hideLoading() {
+      const el = document.getElementById('loadingOverlay');
+      if (el) el.remove();
+    }
+
+    function cancelLoading() {
+      hideLoading();
+      isWorking = false;
+      updateStatus(false);
+      showToast('已跳过等待，请确认ESP32状态', 'info');
+      addLog('用户手动跳过等待');
+    }
+
+    // ======================== 向ESP32发送指令 ========================
+    function sendToMain(command) {
+      const url = `http://${mainEspIp}/cmd?c=${encodeURIComponent(command)}`;
+      addLog(`发送主控: ${command}`);
+      return fetch(url)
+        .then(r => r.text())
+        .then(d => { addLog(`主控响应: ${d}`); return d; })
+        .catch(e => { addLog(`主控错误: ${e.message}`); throw e; });
+    }
+    function sendToBag(command) {
+      const url = `http://${bagEspIp}/cmd?c=${encodeURIComponent(command)}`;
+      addLog(`发送袋装: ${command}`);
+      return fetch(url)
+        .then(r => r.text())
+        .then(d => { addLog(`袋装响应: ${d}`); return d; })
+        .catch(e => { addLog(`袋装错误: ${e.message}`); throw e; });
+    }
+    function sendToBoth(command) {
+      addLog(`双发: ${command}`);
+      return Promise.all([
+        sendToMain(command).catch(e => e),
+        sendToBag(command).catch(e => e)
+      ]);
+    }
+
+    // ======================== IP 保存 ========================
+    function saveEspIp() {
+      mainEspIp = document.getElementById('mainEspIp').value.trim();
+      bagEspIp  = mainEspIp;
+      localStorage.setItem('mainEspIp', mainEspIp);
+      localStorage.setItem('bagEspIp',  bagEspIp);
+      showToast(`树莓派IP已保存: ${mainEspIp}`, 'success');
+      addLog(`树莓派IP: ${mainEspIp}`);
+    }
+
+    // ======================== 模式切换 ========================
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('dailyModeBtn').className = mode === 'daily' ? 'active' : '';
+      document.getElementById('planModeBtn').className = mode === 'plan' ? 'active' : '';
+      document.getElementById('fillModeBtn').className = mode === 'fill' ? 'active' : '';
+
+      document.getElementById('batchArea').style.display = mode === 'daily' ? 'block' : 'none';
+      document.getElementById('planSection').style.display = mode === 'plan' ? 'block' : 'none';
+      document.getElementById('currentPlanSection').style.display = mode === 'plan' ? 'block' : 'none';
+      document.getElementById('fillSection').style.display = mode === 'fill' ? 'block' : 'none';
+
+      updateMedicineCards();
+      if (mode === 'plan') {
+        loadUserList();
+        loadPhotoList();
+      }
+    }
+
+    // ======================== 药品卡片 ========================
+    function updateMedicineCards() {
+      const grid = document.getElementById('medGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        const card = document.createElement('div');
+        card.className = 'medicine-card';
+        if (i === 6) {
+          card.style.borderColor = 'rgba(255, 159, 67, 0.5)';
+          card.style.background = 'linear-gradient(145deg, #2a1e4a, #3b2c5c)';
+        }
+        let content = `<h3><i class="fas fa-prescription-bottle-alt"></i> ${medicineNames[i]}</h3>`;
+
+        if (currentMode === 'daily' || currentMode === 'plan') {
+          content += `
+            <div class="medicine-input-group">
+              <button onclick="decrementQuantity(${i})"><i class="fas fa-minus"></i></button>
+              <input type="number" id="med${i}" min="0" max="10" value="0" placeholder="0">
+              <button onclick="incrementQuantity(${i})"><i class="fas fa-plus"></i></button>
+            </div>
+          `;
+        }
+
+        if (currentMode === 'daily') {
+          content += `<button class="dispense-btn" onclick="dispenseSingle(${i})"><i class="fas fa-hand-holding-medical"></i> 取出</button>`;
+        }
+
+        card.innerHTML = content;
+        grid.appendChild(card);
+      }
+    }
+
+    function incrementQuantity(idx) {
+      const inp = document.getElementById('med' + idx);
+      let v = parseInt(inp.value) || 0;
+      if (v < 10) inp.value = v + 1;
+    }
+    function decrementQuantity(idx) {
+      const inp = document.getElementById('med' + idx);
+      let v = parseInt(inp.value) || 0;
+      if (v > 0) inp.value = v - 1;
+    }
+
+    // ======================== 新增用户上传 ========================
+    function uploadNewUser() {
+      const name = document.getElementById('newUserName').value.trim();
+      if (!name) {
+        showToast('请输入姓名', 'error');
+        return;
+      }
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showToast('请选择一张照片', 'error');
+        return;
+      }
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('file', file);
+
+      showLoading('正在上传并录入人脸...');
+      fetch(`http://${mainEspIp}/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        hideLoading();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addLog(`新增用户 ${name} 录入成功`);
+          // 清空输入
+          document.getElementById('newUserName').value = '';
+          document.getElementById('fileInput').value = '';
+          document.getElementById('fileName').textContent = '未选择文件';
+          // 刷新用户列表
+          if (currentMode === 'plan') {
+            loadUserList();
+            loadPhotoList();
+          }
+        } else {
+          showToast('录入失败: ' + data.message, 'error');
+          addLog(`新增用户 ${name} 录入失败: ${data.message}`);
+        }
+      })
+      .catch(err => {
+        hideLoading();
+        showToast('上传失败，请检查网络', 'error');
+        addLog('上传失败: ' + err);
+      });
+    }
+
+    // ======================== 取药指令 ========================
+    function getCommandFromInputs() {
+      let cmd = '';
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        const val = parseInt(document.getElementById('med' + i).value) || 0;
+        cmd += val;
+        if (i < TOTAL_MEDICINES - 1) cmd += ' ';
+      }
+      return cmd;
+    }
+
+    function sendDispense(cmd) {
+      if (isWorking) { showToast('正在操作中，请等待', 'info'); return; }
+      isWorking = true;
+      updateStatus(true);
+      showLoading('正在取药...');
+      const fullCmd = 'DISPENSE:' + cmd;
+      addLog(`取药指令: ${fullCmd}`);
+
+      const counts = cmd.split(' ');
+      const hasBottle = counts.slice(0, 6).some(c => parseInt(c) > 0);
+      const hasBag = parseInt(counts[6]) > 0;
+
+      let chain = Promise.resolve();
+      if (hasBottle || hasBag) {
+        chain = chain
+          .then(() => { addLog('→ 发往树莓派→USB→主控（瓶+袋自动级联）'); showLoading('主控取药中，完成后请点击下方按钮'); return sendToMain(fullCmd); })
+          .then(() => waitForManual('main'));
+      } else {
+        chain = chain.then(() => { addLog('无需取药'); });
+      }
+
+      chain
+        .then(() => {
+          hideLoading();
+          isWorking = false;
+          updateStatus(false);
+          showToast('取药完成！', 'success');
+          addLog('取药流程完成');
+        })
+        .catch(err => {
+          hideLoading();
+          isWorking = false;
+          updateStatus(false);
+          showToast('取药失败，请检查ESP32 IP', 'error');
+          addLog('取药失败: ' + err);
+        });
+    }
+
+    function waitForManual(target) {
+      return new Promise((resolve) => {
+        const name = target === 'main' ? '主控' : '从控';
+        const loading = document.getElementById('loadingOverlay');
+        if (loading) {
+          const btn = loading.querySelector('button');
+          if (btn) {
+            btn.textContent = name + '已完成';
+            btn.style.background = '#52c41a';
+            btn.onclick = () => {
+              addLog(name + '已完成（手动确认）');
+              resolve();
+            };
+          }
+        }
+        setTimeout(() => {
+          addLog(name + '自动超时完成');
+          resolve();
+        }, 60000);
+      });
+    }
+
+    function dispenseSingle(medIndex) {
+      if (isWorking) return;
+      const qty = parseInt(document.getElementById('med' + medIndex).value) || 0;
+      if (qty < 1 || qty > 10) {
+        showToast('请输入1-10之间的数量', 'error');
+        return;
+      }
+      let cmd = '';
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        cmd += (i === medIndex ? qty : 0);
+        if (i < TOTAL_MEDICINES - 1) cmd += ' ';
+      }
+      sendDispense(cmd);
+    }
+
+    function dispenseMultiple() {
+      if (isWorking) return;
+      const cmd = getCommandFromInputs();
+      let has = false;
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        if ((parseInt(document.getElementById('med' + i).value) || 0) > 0) { has = true; break; }
+      }
+      if (!has) {
+        showToast('请至少选择一种药品', 'error');
+        return;
+      }
+      sendDispense(cmd);
+    }
+
+    // ======================== 用户方案管理 ========================
+    function loadUserList() {
+      fetch(`http://${mainEspIp}/get_user_list`)
+        .then(res => res.json())
+        .then(data => {
+          userList = data.users || [];
+          const sel = document.getElementById('userSelect');
+          sel.innerHTML = '<option value="">-- 选择用户 --</option>';
+          userList.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.textContent = u;
+            sel.appendChild(opt);
+          });
+          if (currentSelectedUser && userList.includes(currentSelectedUser)) {
+            sel.value = currentSelectedUser;
+            loadSelectedUserPlan();
+          } else {
+            currentSelectedUser = '';
+            document.getElementById('currentPlanName').textContent = '未选择用户';
+            document.getElementById('currentPlanDetails').textContent = '';
+          }
+        })
+        .catch(err => {
+          showToast('获取用户列表失败', 'error');
+          addLog('获取用户列表失败: ' + err);
+        });
+    }
+
+    function loadSelectedUserPlan() {
+      const sel = document.getElementById('userSelect');
+      const user = sel.value;
+      if (!user) {
+        showToast('请先选择一个用户', 'error');
+        return;
+      }
+      currentSelectedUser = user;
+      fetch(`http://${mainEspIp}/get_user_plan?name=${encodeURIComponent(user)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const plan = data.plan;
+            if (plan.length < TOTAL_MEDICINES) {
+              while (plan.length < TOTAL_MEDICINES) plan.push(0);
+            }
+            for (let i = 0; i < TOTAL_MEDICINES; i++) {
+              const inp = document.getElementById('med' + i);
+              if (inp) inp.value = plan[i] || 0;
+            }
+            document.getElementById('currentPlanName').textContent = user;
+            let details = '';
+            for (let i = 0; i < TOTAL_MEDICINES; i++) {
+              const c = plan[i] || 0;
+              if (c > 0) {
+                details += medicineNames[i] + ': ' + c + (i === 6 ? '袋' : '粒') + '  ';
+              }
+            }
+            document.getElementById('currentPlanDetails').textContent = details || '无';
+            showToast(`已加载 ${user} 的方案`, 'success');
+            addLog(`加载用户 ${user} 方案: ${plan.join(' ')}`);
+          } else {
+            showToast('加载失败', 'error');
+          }
+        })
+        .catch(err => {
+          showToast('加载失败，请检查网络', 'error');
+          addLog('加载用户方案失败: ' + err);
+        });
+    }
+
+    function saveSelectedUserPlan() {
+      const sel = document.getElementById('userSelect');
+      const user = sel.value;
+      if (!user) {
+        showToast('请先选择一个用户', 'error');
+        return;
+      }
+      const cmd = getCommandFromInputs();
+      let has = false;
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        if ((parseInt(document.getElementById('med' + i).value) || 0) > 0) { has = true; break; }
+      }
+      if (!has) {
+        showToast('请至少选择一种药品', 'error');
+        return;
+      }
+      const plan = cmd.split(' ').map(Number);
+      fetch(`http://${mainEspIp}/save_user_plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: user, plan: plan })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast(`已保存 ${user} 的方案`, 'success');
+          addLog(`保存用户 ${user} 方案: ${cmd}`);
+          document.getElementById('currentPlanName').textContent = user;
+          let details = '';
+          for (let i = 0; i < TOTAL_MEDICINES; i++) {
+            const c = plan[i] || 0;
+            if (c > 0) {
+              details += medicineNames[i] + ': ' + c + (i === 6 ? '袋' : '粒') + '  ';
+            }
+          }
+          document.getElementById('currentPlanDetails').textContent = details || '无';
+        } else {
+          showToast('保存失败: ' + data.message, 'error');
+        }
+      })
+      .catch(err => {
+        showToast('保存失败，请检查网络', 'error');
+        addLog('保存用户方案失败: ' + err);
+      });
+    }
+
+    function executeSelectedUserPlan() {
+      const sel = document.getElementById('userSelect');
+      const user = sel.value;
+      if (!user) {
+        showToast('请先选择一个用户', 'error');
+        return;
+      }
+      fetch(`http://${mainEspIp}/get_user_plan?name=${encodeURIComponent(user)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const plan = data.plan;
+            if (plan.every(v => v === 0)) {
+              showToast(`${user} 的方案为空，无法取药`, 'error');
+              return;
+            }
+            const cmd = plan.join(' ');
+            sendDispense(cmd);
+          } else {
+            showToast('加载方案失败', 'error');
+          }
+        })
+        .catch(err => {
+          showToast('执行失败', 'error');
+        });
+    }
+
+    // ======================== 照片列表加载 ========================
+    function loadPhotoList() {
+      const container = document.getElementById('photoList');
+      container.innerHTML = '<p style="color:#888;">加载照片列表中...</p>';
+      fetch(`http://${mainEspIp}/get_user_photos`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.photos || data.photos.length === 0) {
+            container.innerHTML = '<p style="color:#888;">暂无已上传照片</p>';
+            return;
+          }
+          container.innerHTML = '';
+          data.photos.forEach(item => {
+            const group = document.createElement('div');
+            group.className = 'photo-user-group';
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'user-name';
+            nameDiv.innerHTML = `<i class="fas fa-user"></i> ${item.name}`;
+            group.appendChild(nameDiv);
+
+            const photosDiv = document.createElement('div');
+            photosDiv.style.display = 'flex';
+            photosDiv.style.flexWrap = 'wrap';
+            photosDiv.style.gap = '8px';
+
+            item.photos.forEach(fname => {
+              const imgUrl = `http://${mainEspIp}/photo/${encodeURIComponent(fname)}`;
+              const a = document.createElement('div');
+              a.className = 'photo-item';
+              a.onclick = () => window.open(imgUrl, '_blank');
+              const img = document.createElement('img');
+              img.src = imgUrl;
+              img.alt = fname;
+              a.appendChild(img);
+              photosDiv.appendChild(a);
+            });
+            group.appendChild(photosDiv);
+            container.appendChild(group);
+          });
+        })
+        .catch(err => {
+          container.innerHTML = '<p style="color:#ff4757;">加载照片列表失败</p>';
+          console.error(err);
+        });
+    }
+
+    // ======================== 放药模式 ========================
+    function rotateToMedicine(index) {
+      if (isWorking) { showToast('正在操作中，请等待', 'info'); return; }
+      isWorking = true;
+      showLoading('加载中...');
+      const cmd = 'FILL:' + index;
+      const sender = (index === 6) ? sendToBag : sendToMain;
+      sender(cmd)
+        .then(d => {
+          hideLoading();
+          isWorking = false;
+          const name = index === 6 ? '袋装药' : `药品${index+1}`;
+          if (index === 6) {
+            showToast(`已转至${name}位`, 'success');
+          } else {
+            showToast(`放药口已对准${name}并打开，请放药`, 'success');
+            addLog(`放药口已打开，等待放药到${name}，放完后请按复位`);
+          }
+        })
+        .catch(e => {
+          hideLoading();
+          isWorking = false;
+          showToast('操作失败，请检查ESP32 IP', 'error');
+        });
+    }
+
+    function rotateToHome() {
+      if (isWorking) { showToast('正在操作中，请等待', 'info'); return; }
+      isWorking = true;
+      showLoading('复位中...');
+      sendToMain('RESET')
+        .then(d => {
+          hideLoading();
+          isWorking = false;
+          showToast('放药口已关闭，底座已复位', 'success');
+          addLog('主控复位完成（舵机关闭+转盘回药品1）');
+        })
+        .catch(e => {
+          hideLoading();
+          isWorking = false;
+          showToast('复位失败，请检查主控IP', 'error');
+        });
+    }
+
+    function resetBag() {
+      if (isWorking) { showToast('正在操作中，请等待', 'info'); return; }
+      isWorking = true;
+      showLoading('袋装复位中...');
+      sendToBag('RESET')
+        .then(d => {
+          hideLoading();
+          isWorking = false;
+          showToast('袋装药机构已复位', 'success');
+          addLog('从控复位完成（舵机归零+步进停）');
+        })
+        .catch(e => {
+          hideLoading();
+          isWorking = false;
+          showToast('复位失败，请检查从控IP', 'error');
+        });
+    }
+
+    // ======================== 急停 ========================
+    function emergencyStop() {
+      sendToBoth('STOP')
+        .then(d => {
+          showToast('急停指令已发送！', 'error');
+          isWorking = false;
+          hideLoading();
+          updateStatus('emergency');
+        })
+        .catch(e => {
+          showToast('急停发送失败', 'error');
+        });
+    }
+
+    // ======================== 重置 ========================
+    function resetAll() {
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        const inp = document.getElementById('med' + i);
+        if (inp) inp.value = 0;
+      }
+      sendToBoth('RESET')
+        .then(d => {
+          showToast('已重置', 'success');
+          updateStatus(false);
+        })
+        .catch(e => {
+          showToast('数量已重置（ESP32无响应）', 'info');
+          updateStatus(false);
+        });
+    }
+
+    // ======================== 状态轮询 ========================
+    function checkStatus() {
+      fetch(`http://${mainEspIp}/status`)
+        .then(r => r.text())
+        .then(d => {
+          if (d.includes('DISPENSING') || d.includes('running') || d.includes('true')) {
+            if (!isWorking) { isWorking = true; updateStatus(true); }
+          } else if (d.includes('EMERGENCY') || d.includes('emergency')) {
+            updateStatus('emergency');
+          } else {
+            if (isWorking) { showToast('取药完成！', 'success'); isWorking = false; updateStatus(false); }
+          }
+        })
+        .catch(e => {});
+    }
+
+    function updateStatus(state) {
+      const el = document.getElementById('status');
+      if (state === 'emergency') {
+        el.className = 'status emergency';
+        el.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 状态: 急停中';
+      } else if (state === true || state === 'working') {
+        el.className = 'status working';
+        el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 状态: 取药中...';
+      } else {
+        el.className = 'status idle';
+        el.innerHTML = '<i class="fas fa-check-circle"></i> 状态: 待机中';
+      }
+    }
+
+    // ======================== 药品名称设置 ========================
+    function openSettings() {
+      const container = document.getElementById('medicineSettings');
+      container.innerHTML = '';
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        const div = document.createElement('div');
+        div.className = 'medicine-setting-item';
+        div.innerHTML = `
+          <label><i class="fas fa-pills"></i> ${i === 6 ? '袋装药' : '药品'+(i+1)}:</label>
+          <input type="text" id="settingMed${i}" value="${medicineNames[i]}">
+        `;
+        container.appendChild(div);
+      }
+      document.getElementById('settingsModal').style.display = 'block';
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function saveSettings() {
+      const newNames = {};
+      for (let i = 0; i < TOTAL_MEDICINES; i++) {
+        const inp = document.getElementById('settingMed' + i);
+        if (inp) newNames[i] = inp.value.trim() || (i === 6 ? '袋装药' : `药品 ${i+1}`);
+      }
+      medicineNames = newNames;
+      localStorage.setItem('medicineNames', JSON.stringify(medicineNames));
+      updateMedicineCards();
+      closeSettings();
+      showToast('药品名称已更新', 'success');
+      addLog('药品名称已更新');
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('settingsModal');
+      if (event.target == modal) closeSettings();
+    }
+
+    // ======================== 初始化 ========================
+    updateMedicineCards();
+    setInterval(checkStatus, 2000);
+    addLog(`系统初始化完成，主控IP: ${mainEspIp} | 袋装IP: ${bagEspIp}`);
+    if (currentMode === 'plan') {
+      loadUserList();
+      loadPhotoList();
+    }
+  </script>
+
+</body>
+</html>
